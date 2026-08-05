@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Combinatorial Testing Lab</title>
+<style>
+:root{--uq:#51247a;--bg:#f4f0f7;--line:#ddd6e6;--muted:#666;--good:#1e6b3c;--bad:#a63038}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#222}
+header{background:var(--uq);color:#fff;padding:22px 30px}
+header h1{margin:0;font-size:28px}
+header p{margin:7px 0 0}
+.wrap{max-width:1080px;margin:22px auto;padding:0 16px}
+.card{background:#fff;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 2px 10px #00000010}
+h2{margin-top:0;color:var(--uq)}
+textarea{width:100%;min-height:165px;padding:10px;border:1px solid #bbb;border-radius:7px;font-family:Consolas,monospace}
+button{background:var(--uq);color:#fff;border:0;border-radius:7px;padding:10px 15px;font-weight:700;cursor:pointer;margin:0 8px 8px 0}
+.result{margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:8px;background:#fafafa;font-family:Consolas,monospace;white-space:pre-wrap}
+.small{color:var(--muted);font-size:13px}.good{color:var(--good);font-weight:700}.bad{color:var(--bad);font-weight:700}
+table{border-collapse:collapse;width:100%;font-size:13px;margin-top:12px}
+th,td{border:1px solid #ddd;padding:7px;text-align:left}
+th{background:#f3edf7;color:var(--uq)}
+code{background:#f6f4fa;padding:2px 4px;border-radius:4px}
+</style>
+</head>
+<body>
+<header><h1>Combinatorial Testing Lab</h1><p>Check and generate pairwise test suites directly in the browser.</p></header>
+<div class="wrap">
+<div class="card">
+<h2>System model</h2>
+<p><strong>Parameters:</strong> Platform = Zoom, Teams, Meet; Device = Desktop, Tablet, Phone; Network = WiFi, Mobile; Authentication = Password, SSO; Recording = Enabled, Disabled.</p>
+<p><strong>Constraints:</strong> SSO is unavailable on Phone; Recording is unavailable on Mobile; Meet does not support Recording on Tablet.</p>
+<p class="small">Only feasible 2-way interactions are required. A pair is feasible when it appears in at least one complete valid test.</p>
+</div>
+
+<div class="card">
+<h2>Test</h2>
+<p class="small">One test per line. CSV order: Platform,Device,Network,Authentication,Recording</p>
+<textarea id="suite">Zoom,Desktop,WiFi,Password,Enabled
+Teams,Tablet,Mobile,Password,Disabled
+Meet,Phone,WiFi,Password,Disabled
+Zoom,Tablet,WiFi,SSO,Disabled
+Teams,Desktop,Mobile,SSO,Disabled
+Meet,Desktop,WiFi,SSO,Enabled</textarea>
+<p>
+<button onclick="checkSuite()">Check pairwise coverage</button>
+<button onclick="generateSuite()">Generate pairwise suite</button>
+<button onclick="restoreSuite()">Restore incomplete suite</button>
+</p>
+<div id="summary" class="result">No analysis performed.</div>
+<div id="details"></div>
+</div>
+</div>
+
+<script>
+const model={
+  Platform:["Zoom","Teams","Meet"],
+  Device:["Desktop","Tablet","Phone"],
+  Network:["WiFi","Mobile"],
+  Authentication:["Password","SSO"],
+  Recording:["Enabled","Disabled"]
+};
+const names=Object.keys(model);
+
+function valid(t){
+  if(t.Device==="Phone" && t.Authentication==="SSO") return false;
+  if(t.Network==="Mobile" && t.Recording==="Enabled") return false;
+  if(t.Platform==="Meet" && t.Device==="Tablet" && t.Recording==="Enabled") return false;
+  return true;
+}
+
+function enumerateValidTests(){
+  let rows=[{}];
+  for(const n of names){
+    const next=[];
+    for(const r of rows){
+      for(const v of model[n]) next.push({...r,[n]:v});
+    }
+    rows=next;
+  }
+  return rows.filter(valid);
+}
+
+const validTests=enumerateValidTests();
+
+function pairKey(i,a,j,b){
+  return `${names[i]}=${a} | ${names[j]}=${b}`;
+}
+
+function allFeasiblePairs(){
+  const pairs=new Set();
+  for(const t of validTests){
+    for(let i=0;i<names.length;i++){
+      for(let j=i+1;j<names.length;j++){
+        pairs.add(pairKey(i,t[names[i]],j,t[names[j]]));
+      }
+    }
+  }
+  return pairs;
+}
+
+const requiredPairs=allFeasiblePairs();
+
+function parseSuite(){
+  return suite.value.split(/\n+/).map(x=>x.trim()).filter(Boolean).map((line,index)=>{
+    const parts=line.split(",").map(x=>x.trim());
+    if(parts.length!==names.length) return {row:index+1,error:"FORMAT ERROR"};
+    const t={};
+    names.forEach((n,i)=>t[n]=parts[i]);
+    for(const n of names){
+      if(!model[n].includes(t[n])) return {row:index+1,error:`invalid ${n}: ${t[n]}`};
+    }
+    if(!valid(t)) return {row:index+1,error:"constraint violation"};
+    return {row:index+1,test:t};
+  });
+}
+
+function pairsCoveredBy(rows){
+  const covered=new Set();
+  for(const row of rows){
+    if(!row.test) continue;
+    const t=row.test;
+    for(let i=0;i<names.length;i++){
+      for(let j=i+1;j<names.length;j++){
+        covered.add(pairKey(i,t[names[i]],j,t[names[j]]));
+      }
+    }
+  }
+  return covered;
+}
+
+function checkSuite(){
+  const rows=parseSuite();
+  const covered=pairsCoveredBy(rows);
+  const missing=[...requiredPairs].filter(p=>!covered.has(p));
+  const invalid=rows.filter(r=>r.error);
+  const pct=(100*covered.size/requiredPairs.size).toFixed(1);
+
+  summary.textContent=
+    `Valid tests: ${rows.length-invalid.length}\n`+
+    `Invalid rows: ${invalid.length}\n`+
+    `Feasible pairs covered: ${covered.size}/${requiredPairs.size} (${pct}%)\n`+
+    `Missing pairs: ${missing.length}`;
+
+  let html="";
+  if(invalid.length){
+    html+=`<h3 class="bad">Invalid rows</h3><table><tr><th>Row</th><th>Issue</th></tr>`;
+    html+=invalid.map(r=>`<tr><td>${r.row}</td><td>${r.error}</td></tr>`).join("");
+    html+=`</table>`;
+  }
+
+  html+=`<h3 class="${missing.length?'bad':'good'}">${missing.length?'Uncovered feasible pairs':'All feasible pairs covered'}</h3>`;
+  if(missing.length){
+    html+=`<table><tr><th>#</th><th>Missing pair</th></tr>`;
+    html+=missing.map((p,i)=>`<tr><td>${i+1}</td><td><code>${p}</code></td></tr>`).join("");
+    html+=`</table>`;
+  }
+  details.innerHTML=html;
+}
+
+function testPairs(t){
+  const pairs=[];
+  for(let i=0;i<names.length;i++){
+    for(let j=i+1;j<names.length;j++){
+      pairs.push(pairKey(i,t[names[i]],j,t[names[j]]));
+    }
+  }
+  return pairs;
+}
+
+function generateSuite(){
+  const uncovered=new Set(requiredPairs);
+  const chosen=[];
+  while(uncovered.size){
+    let best=null;
+    let bestGain=-1;
+    for(const t of validTests){
+      const gain=testPairs(t).filter(p=>uncovered.has(p)).length;
+      if(gain>bestGain){
+        bestGain=gain;
+        best=t;
+      }
+    }
+    chosen.push(best);
+    testPairs(best).forEach(p=>uncovered.delete(p));
+  }
+  suite.value=chosen.map(t=>names.map(n=>t[n]).join(",")).join("\n");
+  checkSuite();
+}
+
+function restoreSuite(){
+  suite.value=`Zoom,Desktop,WiFi,Password,Enabled
+Teams,Tablet,Mobile,Password,Disabled
+Meet,Phone,WiFi,Password,Disabled
+Zoom,Tablet,WiFi,SSO,Disabled
+Teams,Desktop,Mobile,SSO,Disabled
+Meet,Desktop,WiFi,SSO,Enabled`;
+  checkSuite();
+}
+</script>
+</body>
+</html>
