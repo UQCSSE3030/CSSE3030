@@ -1,0 +1,41 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CFG-Based Testing Lab</title><style>
+:root{--uq:#51247a;--bg:#f4f0f7;--line:#ddd;--good:#1e6b3c;--bad:#a63038}*{box-sizing:border-box}body{margin:0;font-family:Arial;background:var(--bg);color:#222}header{background:var(--uq);color:white;padding:22px 30px}.wrap{max-width:1150px;margin:22px auto;padding:0 16px}.card{background:white;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 2px 10px #00000010}h2,h3{color:var(--uq)}.code{font-family:Consolas;background:#f6f4fa;border-left:4px solid var(--uq);padding:14px;white-space:pre-wrap}textarea{width:100%;min-height:145px;padding:10px;font-family:Consolas;border:1px solid #bbb;border-radius:7px}button{background:var(--uq);color:white;border:0;border-radius:7px;padding:10px 15px;font-weight:700;margin:0 8px 8px 0;cursor:pointer}.result{margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:8px;background:#fafafa;font-family:Consolas;white-space:pre-wrap}table{border-collapse:collapse;width:100%;font-size:13px}th,td{border:1px solid #ddd;padding:7px;text-align:left}th{background:#f3edf7;color:var(--uq)}.good{color:var(--good);font-weight:700}.bad{color:var(--bad);font-weight:700}code{background:#f6f4fa;padding:2px 4px;border-radius:4px}</style></head><body>
+<header><h1>Case 2 — CFG-Based Testing</h1><p>Analyse node, edge, and edge-pair coverage.</p></header><div class="wrap">
+<div class="card"><h2>Source code</h2><div class="code">public static int calculateReward(int purchases,
+                                  boolean member,
+                                  boolean weekend) {
+    if (purchases &lt; 0) {                 // N1
+        return -1;                         // N2
+    }
+    int reward = 0;                        // N3
+    int i = 0;                             // N4
+    while (i &lt; purchases) {                // N5
+        reward += 2;                       // N6
+        if (i == 2) {                      // N7
+            reward += 3;                   // N8
+        }
+        i++;                               // N9
+    }
+    if (member) {                          // N10
+        reward += 5;                       // N11
+    } else if (weekend) {                  // N12
+        reward += 1;                       // N13
+    }
+    return reward;                         // N14
+}</div></div>
+<div class="card"><h2>Test</h2><p>CSV order: purchases,member,weekend</p><textarea id="tests">-1,false,false
+0,false,true
+1,true,false
+3,false,false</textarea><button onclick="run()">Run and analyse coverage</button><button onclick="nodeSuite()">Load node suite</button><button onclick="edgeSuite()">Load edge suite</button><button onclick="pairSuite()">Load edge-pair suite</button><div id="summary" class="result">No tests executed.</div><div id="details"></div></div>
+<div class="card"><h2>Required manual work before using the tool</h2><ol><li>Partition the method into basic blocks.</li><li>Draw the CFG and label true/false edges.</li><li>List node, edge, and feasible edge-pair requirements.</li><li>Predict paths for each test.</li><li>Include loop executions of 0, 1, exactly 3, and more than 3 iterations.</li></ol></div></div>
+<script>
+const nodes=["N1","N2","N3","N4","N5","N6","N7","N8","N9","N10","N11","N12","N13","N14"],edges=["N1-N2","N1-N3","N3-N4","N4-N5","N5-N6","N5-N10","N6-N7","N7-N8","N7-N9","N8-N9","N9-N5","N10-N11","N10-N12","N11-N14","N12-N13","N12-N14","N13-N14"];
+function exec(p,m,w){let ns=["N1"],es=[];if(p<0){ns.push("N2");es.push("N1-N2");return{v:-1,ns,es}}ns.push("N3","N4","N5");es.push("N1-N3","N3-N4","N4-N5");let r=0,i=0;while(i<p){ns.push("N6","N7");es.push("N5-N6","N6-N7");r+=2;if(i===2){ns.push("N8","N9");es.push("N7-N8","N8-N9");r+=3}else{ns.push("N9");es.push("N7-N9")}i++;ns.push("N5");es.push("N9-N5")}es.push("N5-N10");ns.push("N10");if(m){es.push("N10-N11","N11-N14");ns.push("N11","N14");r+=5}else{es.push("N10-N12");ns.push("N12");if(w){es.push("N12-N13","N13-N14");ns.push("N13","N14");r+=1}else{es.push("N12-N14");ns.push("N14")}}return{v:r,ns,es}}
+function parse(){return tests.value.split(/\n+/).map(x=>x.trim()).filter(Boolean).map((line,i)=>{const p=line.split(",").map(x=>x.trim());if(p.length!==3)return{row:i+1,error:"FORMAT ERROR"};const n=Number(p[0]),m=p[1].toLowerCase(),w=p[2].toLowerCase();if(!Number.isInteger(n))return{row:i+1,error:"purchases must be integer"};if(!["true","false"].includes(m)||!["true","false"].includes(w))return{row:i+1,error:"booleans must be true/false"};return{row:i+1,line,p:n,m:m==="true",w:w==="true"}})}
+function epairs(es){const a=[];for(let i=0;i<es.length-1;i++)a.push(es[i]+" then "+es[i+1]);return a}
+function feasiblePairs(){const s=new Set();for(let p=-1;p<=5;p++)for(const m of [false,true])for(const w of [false,true])epairs(exec(p,m,w).es).forEach(x=>s.add(x));return s}const fp=feasiblePairs();
+function run(){const rows=parse(),CN=new Set(),CE=new Set(),CP=new Set(),out=[];for(const x of rows){if(x.error){out.push(x.row+". "+x.error);continue}const z=exec(x.p,x.m,x.w);z.ns.forEach(v=>CN.add(v));z.es.forEach(v=>CE.add(v));epairs(z.es).forEach(v=>CP.add(v));out.push(`${x.row}. ${x.line} -> result=${z.v}\n   path: ${z.ns.join(" → ")}`)}const mn=nodes.filter(x=>!CN.has(x)),me=edges.filter(x=>!CE.has(x)),mp=[...fp].filter(x=>!CP.has(x));summary.textContent=out.join("\n")+`\n\nNode coverage: ${CN.size}/${nodes.length}\nEdge coverage: ${CE.size}/${edges.length}\nFeasible edge-pair coverage: ${CP.size}/${fp.size}`;let h=`<p class="${mn.length?"bad":"good"}">Missing nodes: ${mn.length?mn.join(", "):"none"}</p><p class="${me.length?"bad":"good"}">Missing edges: ${me.length?me.join(", "):"none"}</p>`;if(mp.length)h+=`<h3 class="bad">Missing feasible edge pairs</h3><table><tr><th>#</th><th>Edge pair</th></tr>${mp.map((x,i)=>`<tr><td>${i+1}</td><td><code>${x}</code></td></tr>`).join("")}</table>`;else h+=`<p class="good">All feasible edge pairs covered.</p>`;details.innerHTML=h}
+function nodeSuite(){tests.value="-1,false,false\n3,true,false\n0,false,true";run()}
+function edgeSuite(){tests.value="-1,false,false\n0,false,false\n0,false,true\n0,true,false\n1,false,false\n3,false,false";run()}
+function pairSuite(){tests.value="-1,false,false\n0,true,false\n0,false,true\n0,false,false\n1,false,false\n3,false,false\n4,true,false";run()}
+</script></body></html>
