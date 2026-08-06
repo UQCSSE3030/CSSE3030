@@ -3,87 +3,169 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Checkout Test Lab</title>
+<title>ACTS Fallback Lab</title>
 <style>
 :root{--uq:#51247a;--bg:#f4f0f7;--line:#ddd6e6;--good:#1e6b3c;--bad:#a63038}
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#222}
-header{background:var(--uq);color:white;padding:22px 30px}header h1{margin:0}
-.wrap{max-width:1050px;margin:22px auto;padding:0 16px}
-.card{background:white;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 2px 10px #00000010}
-h2{margin-top:0;color:var(--uq)}textarea{width:100%;min-height:220px;padding:10px;border:1px solid #bbb;border-radius:7px;font-family:Consolas,monospace}
-button{background:var(--uq);color:white;border:0;border-radius:7px;padding:10px 15px;font-weight:700;cursor:pointer;margin-right:8px}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#222}
+header{background:var(--uq);color:white;padding:22px 30px}
+header h1{margin:0}
+.wrap{max-width:1100px;margin:22px auto;padding:0 16px}
+.card{background:#fff;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 2px 10px #00000010}
+h2{margin-top:0;color:var(--uq)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border:1px solid #ddd;padding:8px;text-align:left}
+th{background:#f3edf7;color:var(--uq)}
+.controls{display:flex;gap:14px;flex-wrap:wrap;align-items:end}
+label{font-weight:700}
+select,button{padding:9px 12px;border-radius:7px;border:1px solid #aaa}
+button{background:var(--uq);color:white;border:0;font-weight:700;cursor:pointer}
+.checks label{display:block;margin:8px 0;font-weight:400}
 .result{margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:8px;background:#fafafa;font-family:Consolas,monospace;white-space:pre-wrap}
 .good{color:var(--good);font-weight:700}.bad{color:var(--bad);font-weight:700}
-table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:7px;text-align:left}th{background:#f3edf7;color:var(--uq)}
+.small{font-size:13px;color:#666}
+.scroll{overflow:auto;max-height:420px}
 </style>
 </head>
 <body>
-<header><h1>Checkout Test Lab</h1><p>Check and improve the release test suite.</p></header>
+<header>
+<h1>ACTS Fallback Lab</h1>
+<p>Use this page only when ACTS cannot be downloaded or opened.</p>
+</header>
 <div class="wrap">
 <div class="card">
-<h2>The Model</h2>
+<h2>Model</h2>
 <table>
 <tr><th>Parameter</th><th>Values</th></tr>
-<tr><td>Browser</td><td>Chrome, Firefox, Safari</td></tr><tr><td>Device</td><td>Desktop, Tablet, Phone</td></tr><tr><td>Payment</td><td>Card, PayPal</td></tr><tr><td>Account</td><td>Guest, Member</td></tr><tr><td>Delivery</td><td>Standard, Express</td></tr>
+<tr><td>Browser</td><td>Chrome, Firefox, Safari</td></tr>
+<tr><td>Device</td><td>Desktop, Tablet, Phone</td></tr>
+<tr><td>Payment</td><td>Card, PayPal</td></tr>
+<tr><td>Account</td><td>Guest, Member</td></tr>
+<tr><td>Delivery</td><td>Standard, Express</td></tr>
 </table>
-<p><strong>Rules</strong></p>
-<p>Guest cannot use Express.<br>Tablet cannot use PayPal.<br>Safari on Phone cannot use PayPal.</p>
 </div>
+
 <div class="card">
-<h2>Current Tests</h2>
-<p>One test per line.</p>
-<div class="result">Example format:<br>Chrome,Desktop,Card,Member,Standard</div>
-<textarea id="suite">Chrome,Phone,PayPal,Member,Express
-Firefox,Phone,PayPal,Guest,Standard
-Safari,Desktop,PayPal,Guest,Standard
-Chrome,Tablet,Card,Guest,Standard
-Firefox,Desktop,Card,Member,Express
-Safari,Tablet,Card,Member,Express</textarea>
-<p><button onclick="analyse()">Check coverage</button><button onclick="resetSuite()">Reset</button></p>
-<div id="summary" class="result">No analysis performed.</div>
+<h2>Generation Settings</h2>
+<div class="controls">
+<div>
+<label for="strength">Interaction strength</label><br>
+<select id="strength">
+<option value="2">2-way</option>
+<option value="3">3-way</option>
+</select>
+</div>
+<div class="checks">
+<label><input id="c1" type="checkbox"> Guest cannot use Express</label>
+<label><input id="c2" type="checkbox"> Tablet cannot use PayPal</label>
+<label><input id="c3" type="checkbox"> Safari on Phone cannot use PayPal</label>
+</div>
+<div>
+<button id="generate" type="button">Generate suite</button>
+<button id="download" type="button" disabled>Download CSV</button>
 </div>
 </div>
+<div id="summary" class="result">No suite generated.</div>
+</div>
+
+<div class="card">
+<h2>Generated Tests</h2>
+<div class="scroll">
+<table id="suiteTable">
+<thead><tr><th>#</th><th>Browser</th><th>Device</th><th>Payment</th><th>Account</th><th>Delivery</th></tr></thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+</div>
+
 <script>
-const model={"Browser": ["Chrome", "Firefox", "Safari"], "Device": ["Desktop", "Tablet", "Phone"], "Payment": ["Card", "PayPal"], "Account": ["Guest", "Member"], "Delivery": ["Standard", "Express"]};
-const names=Object.keys(model);
-const initial="Chrome,Phone,PayPal,Member,Express\nFirefox,Phone,PayPal,Guest,Standard\nSafari,Desktop,PayPal,Guest,Standard\nChrome,Tablet,Card,Guest,Standard\nFirefox,Desktop,Card,Member,Express\nSafari,Tablet,Card,Member,Express";
+const names=["Browser","Device","Payment","Account","Delivery"];
+const values={
+ Browser:["Chrome","Firefox","Safari"],
+ Device:["Desktop","Tablet","Phone"],
+ Payment:["Card","PayPal"],
+ Account:["Guest","Member"],
+ Delivery:["Standard","Express"]
+};
+let lastSuite=[];
+
 function valid(t){
- if(t.Account==="Guest"&&t.Delivery==="Express")return false;
- if(t.Device==="Tablet"&&t.Payment==="PayPal")return false;
- if(t.Browser==="Safari"&&t.Device==="Phone"&&t.Payment==="PayPal")return false;
+ if(document.getElementById("c1").checked && t.Account==="Guest" && t.Delivery==="Express") return false;
+ if(document.getElementById("c2").checked && t.Device==="Tablet" && t.Payment==="PayPal") return false;
+ if(document.getElementById("c3").checked && t.Browser==="Safari" && t.Device==="Phone" && t.Payment==="PayPal") return false;
  return true;
 }
-function enumerate(){
+function allRows(){
  let rows=[{}];
  for(const n of names){
-   const next=[];
-   for(const r of rows)for(const v of model[n])next.push({...r,[n]:v});
-   rows=next;
+  const next=[];
+  for(const r of rows) for(const v of values[n]) next.push({...r,[n]:v});
+  rows=next;
  }
  return rows.filter(valid);
 }
-const validTests=enumerate();
-function key(i,a,j,b){return `${names[i]}=${a} | ${names[j]}=${b}`;}
-const required=new Set();
-for(const t of validTests)for(let i=0;i<names.length;i++)for(let j=i+1;j<names.length;j++)required.add(key(i,t[names[i]],j,t[names[j]]));
-function parse(){
- return suite.value.split(/\n+/).map(x=>x.trim()).filter(Boolean).map((line,row)=>{
-   const parts=line.split(",").map(x=>x.trim());
-   if(parts.length!==names.length)return{row:row+1,error:"FORMAT ERROR"};
-   const t={};names.forEach((n,i)=>t[n]=parts[i]);
-   for(const n of names)if(!model[n].includes(t[n]))return{row:row+1,error:`invalid ${n}: ${t[n]}`};
-   if(!valid(t))return{row:row+1,error:"constraint violation"};
-   return{row:row+1,test:t};
- });
+function combos(arr,k,start=0,prefix=[],out=[]){
+ if(prefix.length===k){out.push(prefix.slice());return out;}
+ for(let i=start;i<arr.length;i++){prefix.push(arr[i]);combos(arr,k,i+1,prefix,out);prefix.pop();}
+ return out;
 }
-function analyse(){
- const rows=parse();const invalid=rows.filter(r=>r.error);const covered=new Set();
- for(const r of rows)if(r.test)for(let i=0;i<names.length;i++)for(let j=i+1;j<names.length;j++)covered.add(key(i,r.test[names[i]],j,r.test[names[j]]));
- const missing=[...required].filter(x=>!covered.has(x));
- summary.textContent=`Valid tests: ${rows.length-invalid.length}\nInvalid rows: ${invalid.length}\nRequired pairs covered: ${covered.size}/${required.size}\nMissing pairs: ${missing.length}`;
- summary.className="result "+(missing.length||invalid.length?"bad":"good");
+function obligationKey(indices,t){
+ return indices.map(i=>names[i]+"="+t[names[i]]).join(" | ");
 }
-function resetSuite(){suite.value=initial;summary.textContent="No analysis performed.";summary.className="result";}
+function obligations(rows,k){
+ const set=new Set();
+ const groups=combos([...Array(names.length).keys()],k);
+ for(const t of rows) for(const g of groups) set.add(obligationKey(g,t));
+ return set;
+}
+function rowObligations(t,k){
+ const set=new Set();
+ for(const g of combos([...Array(names.length).keys()],k)) set.add(obligationKey(g,t));
+ return set;
+}
+function generateSuite(rows,k){
+ const uncovered=obligations(rows,k);
+ const suite=[];
+ while(uncovered.size){
+  let best=null,bestGain=-1;
+  for(const row of rows){
+   let gain=0;
+   for(const o of rowObligations(row,k)) if(uncovered.has(o)) gain++;
+   if(gain>bestGain){best=row;bestGain=gain;}
+  }
+  if(!best || bestGain<=0) break;
+  suite.push(best);
+  for(const o of rowObligations(best,k)) uncovered.delete(o);
+ }
+ return {suite,missing:uncovered.size,total:obligations(rows,k).size};
+}
+function render(){
+ const k=Number(document.getElementById("strength").value);
+ const rows=allRows();
+ const result=generateSuite(rows,k);
+ lastSuite=result.suite;
+ const body=document.querySelector("#suiteTable tbody");
+ body.innerHTML=lastSuite.map((t,i)=>`<tr><td>${i+1}</td>${names.map(n=>`<td>${t[n]}</td>`).join("")}</tr>`).join("");
+ document.getElementById("summary").textContent=
+  `Valid complete configurations: ${rows.length}\n`+
+  `${k}-way obligations: ${result.total}\n`+
+  `Generated tests: ${lastSuite.length}\n`+
+  `Uncovered obligations: ${result.missing}`;
+ document.getElementById("summary").className="result "+(result.missing===0?"good":"bad");
+ document.getElementById("download").disabled=lastSuite.length===0;
+}
+function downloadCsv(){
+ const csv=[names.join(",")].concat(lastSuite.map(t=>names.map(n=>t[n]).join(","))).join("\n");
+ const blob=new Blob([csv],{type:"text/csv"});
+ const a=document.createElement("a");
+ a.href=URL.createObjectURL(blob);
+ a.download=`checkout_${document.getElementById("strength").value}way.csv`;
+ a.click();
+ URL.revokeObjectURL(a.href);
+}
+document.getElementById("generate").addEventListener("click",render);
+document.getElementById("download").addEventListener("click",downloadCsv);
 </script>
 </body>
 </html>
