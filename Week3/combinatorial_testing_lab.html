@@ -34,35 +34,6 @@ code{background:#f6f4fa;padding:2px 4px;border-radius:4px}
 <div class="wrap">
 
 <div class="card">
-<h2>Source code</h2>
-<div class="code">public static boolean isValidConfiguration(
-        String platform,
-        String device,
-        String network,
-        String authentication,
-        String recording) {
-
-    if (device.equals("Phone")
-            &amp;&amp; authentication.equals("SSO")) {
-        return false;
-    }
-
-    if (network.equals("Mobile")
-            &amp;&amp; recording.equals("Enabled")) {
-        return false;
-    }
-
-    if (platform.equals("Meet")
-            &amp;&amp; device.equals("Tablet")
-            &amp;&amp; recording.equals("Enabled")) {
-        return false;
-    }
-
-    return true;
-}</div>
-</div>
-
-<div class="card">
 <h2>System model</h2>
 <table>
 <tr><th>Parameter</th><th>Values</th></tr>
@@ -199,11 +170,8 @@ function analyse(){
     html+=`</table>`;
   }
 
-  html+=`<h3 class="${missing.length?'bad':'good'}">${missing.length?'Missing feasible pairs':'All feasible pairs covered'}</h3>`;
-  if(missing.length){
-    html+=`<table><tr><th>#</th><th>Missing pair</th></tr>`;
-    html+=missing.map((p,i)=>`<tr><td>${i+1}</td><td><code>${p}</code></td></tr>`).join("");
-    html+=`</table>`;
+  if(!missing.length){
+    html+=`<p class="good">All feasible pairs are covered.</p>`;
   }
   details.innerHTML=html;
 }
