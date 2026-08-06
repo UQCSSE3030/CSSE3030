@@ -55,7 +55,9 @@ code{background:#f6f4fa;padding:2px 4px;border-radius:4px}
 <div class="card">
 <h2>Test</h2>
 <p class="small">One test per line. CSV order: Platform,Device,Network,Authentication,Recording</p>
-<textarea id="suite" placeholder="Enter your own candidate tests here."></textarea>
+<div class="result"><strong>Example of one correctly formatted test:</strong>\nZoom,Desktop,WiFi,Password,Enabled</div>
+<p class="small">Do not include headings, brackets, quotation marks, or test numbers. Enter your own suite below.</p>
+<textarea id="suite" placeholder="Example format: Zoom,Desktop,WiFi,Password,Enabled"></textarea>
 
 <p>
 <button onclick="analyse()">Check pairwise coverage</button>
