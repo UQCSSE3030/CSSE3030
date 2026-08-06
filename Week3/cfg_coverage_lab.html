@@ -36,7 +36,11 @@ svg{width:100%;height:720px;border:1px solid var(--line);border-radius:8px;backg
 15,true</textarea>
 <p><button onclick="run()">Run tests</button><button onclick="resetTests()">Reset</button></p>
 <div id="summary" class="result">No analysis performed.</div></div>
-<div class="card"><h2>The Graph</h2>
+<div class="card">
+<h2>Reference CFG</h2>
+<p>Draw your own CFG first.</p>
+<button id="toggleGraph" type="button">Show reference CFG</button>
+<div id="graphWrap" hidden>
 <svg viewBox="0 0 900 720">
 <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#555"/></marker></defs>
 <path id="e12" class="edge" d="M360 80 L180 155"/><path id="e13" class="edge" d="M540 80 L720 155"/>
@@ -57,7 +61,7 @@ svg{width:100%;height:720px;border:1px solid var(--line);border-radius:8px;backg
 <text class="branch" x="285" y="125">T</text><text class="branch" x="615" y="125">F</text>
 <text class="branch" x="520" y="410">T</text><text class="branch" x="815" y="405">F</text>
 <text class="branch" x="715" y="525">T</text><text class="branch" x="875" y="550">F</text>
-</svg></div></div>
+</svg></div></div></div>
 <script>
 const initial=`5,false
 15,true`;
@@ -90,5 +94,12 @@ Invalid rows: ${bad}
 ${lines.join("\n")}`;
 }
 function resetTests(){tests.value=initial;summary.textContent="No analysis performed.";nodes.concat(edges).forEach(id=>document.getElementById(id).classList.remove("hit"));}
+const toggleGraph=document.getElementById("toggleGraph");
+const graphWrap=document.getElementById("graphWrap");
+toggleGraph.addEventListener("click",()=>{
+  const willShow=graphWrap.hidden;
+  graphWrap.hidden=!willShow;
+  toggleGraph.textContent=willShow?"Hide reference CFG":"Show reference CFG";
+});
 </script>
 </body></html>
