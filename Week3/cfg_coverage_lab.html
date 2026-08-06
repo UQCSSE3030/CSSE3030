@@ -76,8 +76,7 @@ function trace(distance,express){
 function run(){
  nodes.concat(edges).forEach(id=>document.getElementById(id).classList.remove("hit"));
  const ns=new Set(),es=new Set(),lines=[];let bad=0;
- tests.value.split(/
-+/).map(x=>x.trim()).filter(Boolean).forEach((line,i)=>{
+ tests.value.split(/\n+/).map(x=>x.trim()).filter(Boolean).forEach((line,i)=>{
   const p=line.split(",").map(x=>x.trim());
   if(p.length!==2||!Number.isInteger(Number(p[0]))||!["true","false"].includes(p[1])){bad++;lines.push(`Row ${i+1}: FORMAT ERROR`);return;}
   const r=trace(Number(p[0]),p[1]==="true");r.ns.forEach(x=>ns.add(x));r.es.forEach(x=>es.add(x));
@@ -88,8 +87,7 @@ function run(){
 Edges: ${es.size}/10
 Invalid rows: ${bad}
 
-${lines.join("
-")}`;
+${lines.join("\n")}`;
 }
 function resetTests(){tests.value=initial;summary.textContent="No analysis performed.";nodes.concat(edges).forEach(id=>document.getElementById(id).classList.remove("hit"));}
 </script>
