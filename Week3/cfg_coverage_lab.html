@@ -8,80 +8,70 @@
 :root{--uq:#51247a;--bg:#f4f0f7;--line:#ddd6e6;--muted:#666;--good:#1e6b3c;--bad:#a63038}
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#222}
-header{background:var(--uq);color:#fff;padding:22px 30px}
+header{background:var(--uq);color:white;padding:22px 30px}
 header h1{margin:0;font-size:28px}
 header p{margin:7px 0 0}
-.wrap{max-width:1150px;margin:22px auto;padding:0 16px}
-.card{background:#fff;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 2px 10px #00000010}
-h2,h3{color:var(--uq);margin-top:0}
+.wrap{max-width:1100px;margin:22px auto;padding:0 16px}
+.card{background:white;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 2px 10px #00000010}
+h2,h3{margin-top:0;color:var(--uq)}
 .code{font-family:Consolas,monospace;background:#f6f4fa;border-left:4px solid var(--uq);padding:14px;white-space:pre-wrap}
 textarea{width:100%;min-height:145px;padding:10px;border:1px solid #bbb;border-radius:7px;font-family:Consolas,monospace}
-button{background:var(--uq);color:#fff;border:0;border-radius:7px;padding:10px 15px;font-weight:700;cursor:pointer;margin:0 8px 8px 0}
+button{background:var(--uq);color:white;border:0;border-radius:7px;padding:10px 15px;font-weight:700;cursor:pointer;margin:0 8px 8px 0}
 .result{margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:8px;background:#fafafa;font-family:Consolas,monospace;white-space:pre-wrap}
-.small{color:var(--muted);font-size:13px}.good{color:var(--good);font-weight:700}.bad{color:var(--bad);font-weight:700}
+.small{font-size:13px;color:var(--muted)}.good{color:var(--good);font-weight:700}.bad{color:var(--bad);font-weight:700}
 table{border-collapse:collapse;width:100%;font-size:13px;margin-top:12px}
-th,td{border:1px solid #ddd;padding:7px;text-align:left;vertical-align:top}
+th,td{border:1px solid #ddd;padding:7px;text-align:left}
 th{background:#f3edf7;color:var(--uq)}
-code{background:#f6f4fa;padding:2px 4px;border-radius:4px}
 #graphCard{display:none}
-svg{width:100%;height:680px;background:#fff;border:1px solid var(--line);border-radius:8px}
+svg{width:100%;height:560px;background:#fff;border:1px solid var(--line);border-radius:8px}
 .node{fill:#f4eff9;stroke:#51247a;stroke-width:2}
 .node.covered{fill:#dff2e5}
 .edge{stroke:#555;stroke-width:2;fill:none;marker-end:url(#arrow)}
 .edge.covered{stroke:#2e8b57;stroke-width:4}
-.label{font:13px Arial;fill:#222}.branch{font:12px Arial;fill:#51247a;font-weight:bold}
+.label{font:14px Arial;fill:#222}.branch{font:12px Arial;fill:#51247a;font-weight:bold}
 </style>
 </head>
 <body>
 <header>
-<h1>Case 2 — CFG-Based Testing</h1>
-<p>Construct a CFG, predict execution paths, and compare node, edge, and edge-pair coverage.</p>
+<h1>Case 2 — Control Flow Graph and CFG-Based Testing</h1>
+<p>Construct the CFG, predict paths, and evaluate node and edge coverage.</p>
 </header>
 
 <div class="wrap">
 <div class="card">
 <h2>Source code</h2>
-<div class="code">public static int assess(int attempts,
-                         int score,
-                         boolean verified) {
-    if (attempts &lt; 0 || score &lt; 0) {      // N1, N2
-        return -1;                            // N3
+<div class="code">public static int calculateFee(int items, boolean member) {
+    if (items &lt; 0 || items &gt; 3) {
+        return -1;
     }
 
-    int risk = 0;                             // N4
-    int i = 0;                                // N5
+    int fee = 5;
+    int i = 0;
 
-    while (i &lt; attempts &amp;&amp; i &lt; 3) {       // N6, N7
-        if (score &lt; 50) {                    // N8
-            risk += 2;                        // N9
-        } else {
-            risk -= 1;                        // N10
-        }
-        i++;                                  // N11
+    while (i &lt; items) {
+        fee += 2;
+        i++;
     }
 
-    if (verified &amp;&amp; risk &lt;= 1) {          // N12, N13
-        return 1;                             // N14
+    if (member) {
+        fee -= 3;
+    } else {
+        fee += 1;
     }
 
-    if (risk &gt;= 4 || score &lt; 40) {          // N15, N16
-        return 0;                             // N17
-    }
-
-    return 2;                                 // N18
+    return fee;
 }</div>
-<p class="small">The CFG models Java short-circuit evaluation by representing each atomic Boolean expression as a separate node.</p>
+<p class="small">For this practical, treat <code>items &lt; 0 || items &gt; 3</code> as one decision node.</p>
 </div>
 
 <div class="card">
 <h2>Test</h2>
-<p class="small">One test per line. CSV order: attempts,score,verified</p>
-<textarea id="tests" placeholder="Enter one test per line using: attempts,score,verified"></textarea>
+<p class="small">One test per line. CSV order: items,member</p>
+<textarea id="tests" placeholder="Enter your own tests here."></textarea>
 <p>
 <button onclick="runTests()">Run and analyse coverage</button>
-
-
 <button onclick="toggleGraph()">Reveal / hide CFG</button>
+<button onclick="clearTests()">Clear</button>
 </p>
 <div id="summary" class="result">No tests executed.</div>
 <div id="details"></div>
@@ -89,197 +79,114 @@ svg{width:100%;height:680px;background:#fff;border:1px solid var(--line);border-
 
 <div class="card" id="graphCard">
 <h2>Reference control flow graph</h2>
-<p class="small">Run the tests after revealing the graph to highlight covered nodes and edges.</p>
-<svg viewBox="0 0 1050 680">
+<p class="small">Run the tests to highlight covered nodes and edges.</p>
+<svg viewBox="0 0 900 560">
 <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#555"/></marker></defs>
 
-<!-- edges -->
-<path id="e12" class="edge" d="M480 65 L650 65"/>
-<path id="e13" class="edge" d="M430 90 L260 135"/>
-<path id="e23" class="edge" d="M650 90 L300 135"/>
-<path id="e24" class="edge" d="M700 90 L700 135"/>
-<path id="e45" class="edge" d="M700 180 L700 215"/>
-<path id="e56" class="edge" d="M700 260 L700 300"/>
-<path id="e67" class="edge" d="M650 340 L500 340"/>
-<path id="e612" class="edge" d="M750 340 Q930 410 820 500"/>
-<path id="e76" class="edge" d="M500 365 Q620 410 650 345"/>
-<path id="e78" class="edge" d="M450 365 L300 420"/>
-<path id="e89" class="edge" d="M260 465 L140 515"/>
-<path id="e810" class="edge" d="M340 465 L460 515"/>
-<path id="e911" class="edge" d="M140 560 Q280 610 520 560"/>
-<path id="e1011" class="edge" d="M460 560 L520 560"/>
-<path id="e116" class="edge" d="M520 560 Q650 610 700 345"/>
-<path id="e1213" class="edge" d="M780 540 L680 585"/>
-<path id="e1215" class="edge" d="M860 540 L940 585"/>
-<path id="e1314" class="edge" d="M680 625 L610 660"/>
-<path id="e1315" class="edge" d="M720 625 L940 585"/>
-<path id="e1516" class="edge" d="M900 625 L790 655"/>
-<path id="e1518" class="edge" d="M980 625 L1000 655"/>
-<path id="e1617" class="edge" d="M790 675 L730 675"/>
-<path id="e1618" class="edge" d="M830 675 L1000 675"/>
+<path id="e12" class="edge" d="M405 75 L250 125"/>
+<path id="e13" class="edge" d="M495 75 L600 125"/>
+<path id="e34" class="edge" d="M600 170 L600 215"/>
+<path id="e45" class="edge" d="M600 260 L600 305"/>
+<path id="e56" class="edge" d="M550 345 L340 395"/>
+<path id="e58" class="edge" d="M650 345 L760 395"/>
+<path id="e67" class="edge" d="M340 440 L340 485"/>
+<path id="e75" class="edge" d="M420 505 Q620 535 650 345"/>
+<path id="e89" class="edge" d="M720 440 L590 490"/>
+<path id="e810" class="edge" d="M800 440 L835 490"/>
+<path id="e911" class="edge" d="M590 535 L700 535"/>
+<path id="e1011" class="edge" d="M835 535 L700 535"/>
 
-<!-- nodes -->
-<polygon id="N1" class="node" points="430,15 520,55 430,95 340,55"/>
-<text class="label" x="430" y="60" text-anchor="middle">N1: attempts &lt; 0?</text>
+<polygon id="N1" class="node" points="450,15 560,55 450,95 340,55"/>
+<text class="label" x="450" y="60" text-anchor="middle">N1: items invalid?</text>
 
-<polygon id="N2" class="node" points="700,15 790,55 700,95 610,55"/>
-<text class="label" x="700" y="60" text-anchor="middle">N2: score &lt; 0?</text>
+<rect id="N2" class="node" x="175" y="125" width="150" height="45" rx="8"/>
+<text class="label" x="250" y="153" text-anchor="middle">N2: return -1</text>
 
-<rect id="N3" class="node" x="205" y="135" width="150" height="45" rx="8"/>
-<text class="label" x="280" y="163" text-anchor="middle">N3: return -1</text>
+<rect id="N3" class="node" x="525" y="125" width="150" height="45" rx="8"/>
+<text class="label" x="600" y="153" text-anchor="middle">N3: fee = 5</text>
 
-<rect id="N4" class="node" x="625" y="135" width="150" height="45" rx="8"/>
-<text class="label" x="700" y="163" text-anchor="middle">N4: risk = 0</text>
+<rect id="N4" class="node" x="525" y="215" width="150" height="45" rx="8"/>
+<text class="label" x="600" y="243" text-anchor="middle">N4: i = 0</text>
 
-<rect id="N5" class="node" x="625" y="215" width="150" height="45" rx="8"/>
-<text class="label" x="700" y="243" text-anchor="middle">N5: i = 0</text>
+<polygon id="N5" class="node" points="600,300 700,340 600,380 500,340"/>
+<text class="label" x="600" y="345" text-anchor="middle">N5: i &lt; items?</text>
 
-<polygon id="N6" class="node" points="700,295 790,335 700,375 610,335"/>
-<text class="label" x="700" y="340" text-anchor="middle">N6: i &lt; attempts?</text>
+<rect id="N6" class="node" x="265" y="395" width="150" height="45" rx="8"/>
+<text class="label" x="340" y="423" text-anchor="middle">N6: fee += 2</text>
 
-<polygon id="N7" class="node" points="500,295 590,335 500,375 410,335"/>
-<text class="label" x="500" y="340" text-anchor="middle">N7: i &lt; 3?</text>
+<rect id="N7" class="node" x="265" y="485" width="150" height="45" rx="8"/>
+<text class="label" x="340" y="513" text-anchor="middle">N7: i++</text>
 
-<polygon id="N8" class="node" points="300,415 390,455 300,495 210,455"/>
-<text class="label" x="300" y="460" text-anchor="middle">N8: score &lt; 50?</text>
+<polygon id="N8" class="node" points="760,390 850,430 760,470 670,430"/>
+<text class="label" x="760" y="435" text-anchor="middle">N8: member?</text>
 
-<rect id="N9" class="node" x="65" y="515" width="150" height="45" rx="8"/>
-<text class="label" x="140" y="543" text-anchor="middle">N9: risk += 2</text>
+<rect id="N9" class="node" x="515" y="490" width="150" height="45" rx="8"/>
+<text class="label" x="590" y="518" text-anchor="middle">N9: fee -= 3</text>
 
-<rect id="N10" class="node" x="385" y="515" width="150" height="45" rx="8"/>
-<text class="label" x="460" y="543" text-anchor="middle">N10: risk -= 1</text>
+<rect id="N10" class="node" x="760" y="490" width="150" height="45" rx="8"/>
+<text class="label" x="835" y="518" text-anchor="middle">N10: fee += 1</text>
 
-<rect id="N11" class="node" x="545" y="515" width="150" height="45" rx="8"/>
-<text class="label" x="620" y="543" text-anchor="middle">N11: i++</text>
+<rect id="N11" class="node" x="625" y="515" width="150" height="35" rx="8"/>
+<text class="label" x="700" y="538" text-anchor="middle">N11: return fee</text>
 
-<polygon id="N12" class="node" points="820,495 910,535 820,575 730,535"/>
-<text class="label" x="820" y="540" text-anchor="middle">N12: verified?</text>
-
-<polygon id="N13" class="node" points="680,580 770,620 680,660 590,620"/>
-<text class="label" x="680" y="625" text-anchor="middle">N13: risk &lt;= 1?</text>
-
-<rect id="N14" class="node" x="535" y="650" width="150" height="30" rx="8"/>
-<text class="label" x="610" y="671" text-anchor="middle">N14: return 1</text>
-
-<polygon id="N15" class="node" points="940,580 1030,620 940,660 850,620"/>
-<text class="label" x="940" y="625" text-anchor="middle">N15: risk &gt;= 4?</text>
-
-<polygon id="N16" class="node" points="790,640 870,675 790,710 710,675"/>
-<text class="label" x="790" y="680" text-anchor="middle">N16: score &lt; 40?</text>
-
-<rect id="N17" class="node" x="650" y="660" width="120" height="30" rx="8"/>
-<text class="label" x="710" y="681" text-anchor="middle">N17: return 0</text>
-
-<rect id="N18" class="node" x="930" y="660" width="120" height="30" rx="8"/>
-<text class="label" x="990" y="681" text-anchor="middle">N18: return 2</text>
-
-<text class="branch" x="315" y="105">T</text><text class="branch" x="555" y="55">F</text>
-<text class="branch" x="560" y="105">T</text><text class="branch" x="715" y="110">F</text>
-<text class="branch" x="590" y="325">T</text><text class="branch" x="800" y="390">F</text>
-<text class="branch" x="405" y="385">T</text><text class="branch" x="595" y="390">F</text>
-<text class="branch" x="190" y="505">T</text><text class="branch" x="400" y="505">F</text>
-<text class="branch" x="705" y="575">T</text><text class="branch" x="920" y="565">F</text>
-<text class="branch" x="590" y="650">T</text><text class="branch" x="785" y="610">F</text>
-<text class="branch" x="840" y="650">T</text><text class="branch" x="1020" y="650">F</text>
-<text class="branch" x="720" y="675">T</text><text class="branch" x="890" y="675">F</text>
+<text class="branch" x="310" y="105">T</text><text class="branch" x="540" y="105">F</text>
+<text class="branch" x="475" y="380">T</text><text class="branch" x="700" y="380">F</text>
+<text class="branch" x="650" y="475">T</text><text class="branch" x="855" y="475">F</text>
 </svg>
 </div>
 </div>
 
 <script>
-const allNodes=["N1","N2","N3","N4","N5","N6","N7","N8","N9","N10","N11","N12","N13","N14","N15","N16","N17","N18"];
-const allEdges=["N1-N2","N1-N3","N2-N3","N2-N4","N4-N5","N5-N6","N6-N7","N6-N12","N7-N6","N7-N8","N8-N9","N8-N10","N9-N11","N10-N11","N11-N6","N12-N13","N12-N15","N13-N14","N13-N15","N15-N16","N15-N17","N16-N17","N16-N18"];
+const allNodes=["N1","N2","N3","N4","N5","N6","N7","N8","N9","N10","N11"];
+const allEdges=["N1-N2","N1-N3","N3-N4","N4-N5","N5-N6","N5-N8","N6-N7","N7-N5","N8-N9","N8-N10","N9-N11","N10-N11"];
 
-function execute(attempts,score,verified){
-  const ns=["N1"],es=[];
-  if(attempts<0){
-    ns.push("N3"); es.push("N1-N3");
-    return {result:-1,nodes:ns,edges:es};
+function execute(items,member){
+  const nodes=["N1"],edges=[];
+  if(items<0 || items>3){
+    nodes.push("N2");
+    edges.push("N1-N2");
+    return {result:-1,nodes,edges};
   }
 
-  ns.push("N2"); es.push("N1-N2");
-  if(score<0){
-    ns.push("N3"); es.push("N2-N3");
-    return {result:-1,nodes:ns,edges:es};
-  }
+  nodes.push("N3","N4","N5");
+  edges.push("N1-N3","N3-N4","N4-N5");
 
-  ns.push("N4","N5","N6"); es.push("N2-N4","N4-N5","N5-N6");
-  let risk=0,i=0;
-
-  while(i<attempts){
-    ns.push("N7"); es.push("N6-N7");
-    if(!(i<3)){
-      es.push("N7-N6");
-      ns.push("N6");
-      break;
-    }
-
-    ns.push("N8"); es.push("N7-N8");
-    if(score<50){
-      ns.push("N9","N11"); es.push("N8-N9","N9-N11");
-      risk+=2;
-    }else{
-      ns.push("N10","N11"); es.push("N8-N10","N10-N11");
-      risk-=1;
-    }
+  let fee=5;
+  let i=0;
+  while(i<items){
+    nodes.push("N6","N7","N5");
+    edges.push("N5-N6","N6-N7","N7-N5");
+    fee+=2;
     i++;
-    ns.push("N6"); es.push("N11-N6");
   }
 
-  es.push("N6-N12"); ns.push("N12");
-  if(verified){
-    es.push("N12-N13"); ns.push("N13");
-    if(risk<=1){
-      es.push("N13-N14"); ns.push("N14");
-      return {result:1,nodes:ns,edges:es};
-    }
-    es.push("N13-N15"); ns.push("N15");
+  nodes.push("N8");
+  edges.push("N5-N8");
+
+  if(member){
+    nodes.push("N9","N11");
+    edges.push("N8-N9","N9-N11");
+    fee-=3;
   }else{
-    es.push("N12-N15"); ns.push("N15");
+    nodes.push("N10","N11");
+    edges.push("N8-N10","N10-N11");
+    fee+=1;
   }
 
-  if(risk>=4){
-    es.push("N15-N17"); ns.push("N17");
-    return {result:0,nodes:ns,edges:es};
-  }
-
-  es.push("N15-N16"); ns.push("N16");
-  if(score<40){
-    es.push("N16-N17"); ns.push("N17");
-    return {result:0,nodes:ns,edges:es};
-  }
-
-  es.push("N16-N18"); ns.push("N18");
-  return {result:2,nodes:ns,edges:es};
+  return {result:fee,nodes,edges};
 }
 
-function parse(){
+function parseTests(){
   return tests.value.split(/\n+/).map(x=>x.trim()).filter(Boolean).map((line,index)=>{
-    const p=line.split(",").map(x=>x.trim());
-    if(p.length!==3) return {row:index+1,error:"FORMAT ERROR"};
-    const attempts=Number(p[0]), score=Number(p[1]), verified=p[2].toLowerCase();
-    if(!Number.isInteger(attempts) || !Number.isInteger(score)) return {row:index+1,error:"attempts and score must be integers"};
-    if(!["true","false"].includes(verified)) return {row:index+1,error:"verified must be true or false"};
-    return {row:index+1,line,attempts,score,verified:verified==="true"};
+    const parts=line.split(",").map(x=>x.trim());
+    if(parts.length!==2) return {row:index+1,error:"FORMAT ERROR"};
+    const items=Number(parts[0]);
+    const member=parts[1].toLowerCase();
+    if(!Number.isInteger(items)) return {row:index+1,error:"items must be an integer"};
+    if(!["true","false"].includes(member)) return {row:index+1,error:"member must be true or false"};
+    return {row:index+1,line,items,member:member==="true"};
   });
 }
-function edgePairs(edges){
-  const out=[];
-  for(let i=0;i<edges.length-1;i++) out.push(`${edges[i]} then ${edges[i+1]}`);
-  return out;
-}
-function feasibleEdgePairs(){
-  const set=new Set();
-  for(let a=-1;a<=5;a++){
-    for(const s of [-1,30,45,60]){
-      for(const v of [false,true]){
-        edgePairs(execute(a,s,v).edges).forEach(x=>set.add(x));
-      }
-    }
-  }
-  return set;
-}
-const requiredPairs=feasibleEdgePairs();
 
 function clearGraph(){
   allNodes.forEach(id=>{const e=document.getElementById(id);if(e)e.classList.remove("covered")});
@@ -288,17 +195,22 @@ function clearGraph(){
     if(e)e.classList.remove("covered");
   });
 }
+
 function runTests(){
   clearGraph();
-  const rows=parse();
-  const nodes=new Set(),edges=new Set(),pairs=new Set(),out=[];
+  const rows=parseTests();
+  const nodes=new Set(),edges=new Set(),output=[];
+
   for(const row of rows){
-    if(row.error){out.push(`${row.row}. ${row.error}`);continue}
-    const r=execute(row.attempts,row.score,row.verified);
-    r.nodes.forEach(x=>nodes.add(x));
-    r.edges.forEach(x=>edges.add(x));
-    edgePairs(r.edges).forEach(x=>pairs.add(x));
-    out.push(`${row.row}. ${row.line} -> result=${r.result}\n   path: ${r.nodes.join(" → ")}`);
+    if(row.error){
+      output.push(`${row.row}. ${row.error}`);
+      continue;
+    }
+
+    const result=execute(row.items,row.member);
+    result.nodes.forEach(x=>nodes.add(x));
+    result.edges.forEach(x=>edges.add(x));
+    output.push(`${row.row}. ${row.line} -> result=${result.result}\n   path: ${result.nodes.join(" → ")}`);
   }
 
   nodes.forEach(id=>{const e=document.getElementById(id);if(e)e.classList.add("covered")});
@@ -309,29 +221,27 @@ function runTests(){
 
   const missingNodes=allNodes.filter(x=>!nodes.has(x));
   const missingEdges=allEdges.filter(x=>!edges.has(x));
-  const missingPairs=[...requiredPairs].filter(x=>!pairs.has(x));
 
   summary.textContent=
-    out.join("\n")+
+    output.join("\n")+
     `\n\nNode coverage: ${nodes.size}/${allNodes.length}`+
-    `\nEdge coverage: ${edges.size}/${allEdges.length}`+
-    `\nFeasible edge-pair coverage: ${pairs.size}/${requiredPairs.size}`;
+    `\nEdge coverage: ${edges.size}/${allEdges.length}`;
 
   let html=`<p class="${missingNodes.length?'bad':'good'}">Missing nodes: ${missingNodes.length?missingNodes.join(", "):"none"}</p>`;
   html+=`<p class="${missingEdges.length?'bad':'good'}">Missing edges: ${missingEdges.length?missingEdges.join(", "):"none"}</p>`;
-  html+=`<h3 class="${missingPairs.length?'bad':'good'}">Missing feasible edge pairs</h3>`;
-  if(missingPairs.length){
-    html+=`<table><tr><th>#</th><th>Edge pair</th></tr>`;
-    html+=missingPairs.map((x,i)=>`<tr><td>${i+1}</td><td><code>${x}</code></td></tr>`).join("");
-    html+=`</table>`;
-  }else{
-    html+=`<p class="good">All feasible edge pairs are covered.</p>`;
-  }
   details.innerHTML=html;
 }
+
 function toggleGraph(){
   const g=document.getElementById("graphCard");
   g.style.display=(g.style.display==="block")?"none":"block";
+}
+
+function clearTests(){
+  tests.value="";
+  summary.textContent="No tests executed.";
+  details.innerHTML="";
+  clearGraph();
 }
 </script>
 </body>
