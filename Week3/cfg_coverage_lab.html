@@ -1,256 +1,96 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Week 3 — CFG-Based Testing Lab</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Delivery Fee Lab</title>
 <style>
-:root{--uq:#51247a;--bg:#f4f0f7;--line:#ddd6e6;--muted:#666;--good:#1e6b3c;--bad:#a63038}
-*{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#222}
-header{background:var(--uq);color:white;padding:22px 30px}
-header h1{margin:0;font-size:28px}
-header p{margin:7px 0 0}
-.wrap{max-width:1100px;margin:22px auto;padding:0 16px}
+:root{--uq:#51247a;--bg:#f4f0f7;--line:#ddd6e6;--good:#1e6b3c;--bad:#a63038}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#222}
+header{background:var(--uq);color:white;padding:22px 30px}.wrap{max-width:1100px;margin:22px auto;padding:0 16px}
 .card{background:white;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 2px 10px #00000010}
-h2,h3{margin-top:0;color:var(--uq)}
-.code{font-family:Consolas,monospace;background:#f6f4fa;border-left:4px solid var(--uq);padding:14px;white-space:pre-wrap}
-textarea{width:100%;min-height:145px;padding:10px;border:1px solid #bbb;border-radius:7px;font-family:Consolas,monospace}
-button{background:var(--uq);color:white;border:0;border-radius:7px;padding:10px 15px;font-weight:700;cursor:pointer;margin:0 8px 8px 0}
+h2{margin-top:0;color:var(--uq)}.code{font-family:Consolas,monospace;background:#f6f4fa;border-left:4px solid var(--uq);padding:14px;white-space:pre-wrap}
+textarea{width:100%;min-height:120px;padding:10px;border:1px solid #bbb;border-radius:7px;font-family:Consolas,monospace}
+button{background:var(--uq);color:white;border:0;border-radius:7px;padding:10px 15px;font-weight:700;cursor:pointer;margin-right:8px}
 .result{margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:8px;background:#fafafa;font-family:Consolas,monospace;white-space:pre-wrap}
-.small{font-size:13px;color:var(--muted)}.good{color:var(--good);font-weight:700}.bad{color:var(--bad);font-weight:700}
-table{border-collapse:collapse;width:100%;font-size:13px;margin-top:12px}
-th,td{border:1px solid #ddd;padding:7px;text-align:left}
-th{background:#f3edf7;color:var(--uq)}
-#graphCard{display:none}
-svg{width:100%;height:820px;background:#fff;border:1px solid var(--line);border-radius:8px}
-.node{fill:#f4eff9;stroke:#51247a;stroke-width:2}
-.node.covered{fill:#dff2e5}
-.edge{stroke:#555;stroke-width:2;fill:none;marker-end:url(#arrow)}
-.edge.covered{stroke:#2e8b57;stroke-width:4}
-.label{font:14px Arial;fill:#222}.branch{font:12px Arial;fill:#51247a;font-weight:bold}
+svg{width:100%;height:720px;border:1px solid var(--line);border-radius:8px;background:white}
+.node{fill:#fff;stroke:#51247a;stroke-width:2}.edge{fill:none;stroke:#555;stroke-width:2;marker-end:url(#arrow)}
+.hit{fill:#e6f5ea!important;stroke:#1e6b3c!important}.edge.hit{stroke:#1e6b3c!important;stroke-width:4}
+.label{font-size:16px;font-family:Arial}.branch{font-size:14px;font-weight:bold}
 </style>
 </head>
 <body>
-<header>
-<h1>Case 2 — Control Flow Graph and CFG-Based Testing</h1>
-<p>Construct the CFG, predict paths, and evaluate node and edge coverage.</p>
-</header>
-
+<header><h1>Delivery Fee Lab</h1><p>Run the tests. Watch the paths.</p></header>
 <div class="wrap">
-<div class="card">
-<h2>Source code</h2>
-<div class="code">public static int calculateFee(int items, boolean member) {
-    if (items &lt; 0 || items &gt; 3) {
-        return -1;
-    }
-
-    int fee = 5;
-    int i = 0;
-
-    while (i &lt; items) {
+<div class="card"><h2>The Code</h2><div class="code">public static int deliveryFee(int distance, boolean express) {
+    if (distance &lt; 0 || distance &gt; 30) return -1;
+    int fee = 4;
+    while (distance &gt; 10) {
         fee += 2;
-        i++;
+        distance -= 10;
     }
-
-    if (member) {
-        fee -= 3;
-    } else {
-        fee += 1;
-    }
-
+    if (express) fee += 5;
     return fee;
-}</div>
-<p class="small">For this practical, treat <code>items &lt; 0 || items &gt; 3</code> as one decision node.</p>
-</div>
-
-<div class="card">
-<h2>Test</h2>
-<p class="small">One test per line. CSV order: items,member</p>
-<div class="result"><strong>Example of one correctly formatted test:</strong><br>0,true</div>
-<p class="small">The first value must be an integer. The second value must be exactly true or false. Enter your own tests below.</p>
-<textarea id="tests" placeholder="Example format: 0,true"></textarea>
-<p>
-<button onclick="runTests()">Run and analyse coverage</button>
-<button onclick="toggleGraph()">Reveal / hide CFG</button>
-<button onclick="clearTests()">Clear</button>
-</p>
-<div id="summary" class="result">No tests executed.</div>
-<div id="details"></div>
-</div>
-
-<div class="card" id="graphCard">
-<h2>Reference control flow graph</h2>
-<p class="small">Run the tests to highlight covered nodes and edges.</p>
-<svg viewBox="0 0 1000 820">
+}</div></div>
+<div class="card"><h2>Current Tests</h2><div class="result">Example format:<br>5,false</div>
+<textarea id="tests">5,false
+15,true</textarea>
+<p><button onclick="run()">Run tests</button><button onclick="resetTests()">Reset</button></p>
+<div id="summary" class="result">No analysis performed.</div></div>
+<div class="card"><h2>The Graph</h2>
+<svg viewBox="0 0 900 720">
 <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#555"/></marker></defs>
-
-<!-- Edges -->
-<path id="e12" class="edge" d="M430 90 L240 155"/>
-<path id="e13" class="edge" d="M570 90 L760 155"/>
-<path id="e34" class="edge" d="M760 205 L760 260"/>
-<path id="e45" class="edge" d="M760 310 L760 370"/>
-<path id="e56" class="edge" d="M660 420 L390 495"/>
-<path id="e58" class="edge" d="M820 420 L885 495"/>
-<path id="e67" class="edge" d="M390 545 L390 610"/>
-<path id="e75" class="edge" d="M470 635 C650 700 690 620 700 455"/>
-<path id="e89" class="edge" d="M830 545 L670 630"/>
-<path id="e810" class="edge" d="M930 545 L930 630"/>
-<path id="e911" class="edge" d="M670 680 L790 745"/>
-<path id="e1011" class="edge" d="M930 680 L810 745"/>
-
-<!-- Nodes -->
-<polygon id="N1" class="node" points="500,25 630,80 500,135 370,80"/>
-<text class="label" x="500" y="76" text-anchor="middle">N1: items invalid?</text>
-
-<rect id="N2" class="node" x="145" y="155" width="190" height="50" rx="8"/>
-<text class="label" x="240" y="186" text-anchor="middle">N2: return -1</text>
-
-<rect id="N3" class="node" x="665" y="155" width="190" height="50" rx="8"/>
-<text class="label" x="760" y="186" text-anchor="middle">N3: fee = 5</text>
-
-<rect id="N4" class="node" x="665" y="260" width="190" height="50" rx="8"/>
-<text class="label" x="760" y="291" text-anchor="middle">N4: i = 0</text>
-
-<polygon id="N5" class="node" points="760,360 890,420 760,480 630,420"/>
-<text class="label" x="760" y="425" text-anchor="middle">N5: i &lt; items?</text>
-
-<rect id="N6" class="node" x="295" y="495" width="190" height="50" rx="8"/>
-<text class="label" x="390" y="526" text-anchor="middle">N6: fee += 2</text>
-
-<rect id="N7" class="node" x="295" y="610" width="190" height="50" rx="8"/>
-<text class="label" x="390" y="641" text-anchor="middle">N7: i++</text>
-
-<polygon id="N8" class="node" points="885,485 975,535 885,585 795,535"/>
-<text class="label" x="885" y="540" text-anchor="middle">N8: member?</text>
-
-<rect id="N9" class="node" x="575" y="630" width="190" height="50" rx="8"/>
-<text class="label" x="670" y="661" text-anchor="middle">N9: fee -= 3</text>
-
-<rect id="N10" class="node" x="835" y="630" width="190" height="50" rx="8"/>
-<text class="label" x="930" y="661" text-anchor="middle">N10: fee += 1</text>
-
-<rect id="N11" class="node" x="695" y="745" width="190" height="50" rx="8"/>
-<text class="label" x="790" y="776" text-anchor="middle">N11: return fee</text>
-
-<!-- Branch labels -->
-<text class="branch" x="330" y="125">T</text>
-<text class="branch" x="670" y="125">F</text>
-<text class="branch" x="585" y="470">T</text>
-<text class="branch" x="865" y="485">F</text>
-<text class="branch" x="760" y="610">T</text>
-<text class="branch" x="955" y="610">F</text>
-</svg>
-</div>
-</div>
-
+<path id="e12" class="edge" d="M360 80 L180 155"/><path id="e13" class="edge" d="M540 80 L720 155"/>
+<path id="e34" class="edge" d="M720 205 L720 280"/><path id="e45" class="edge" d="M620 340 L360 430"/>
+<path id="e47" class="edge" d="M800 340 L820 430"/><path id="e56" class="edge" d="M360 480 L360 550"/>
+<path id="e64" class="edge" d="M440 575 C620 640 650 520 650 390"/>
+<path id="e78" class="edge" d="M760 480 L620 555"/><path id="e79" class="edge" d="M860 480 L860 625"/>
+<path id="e89" class="edge" d="M620 605 L790 655"/>
+<polygon id="N1" class="node" points="450,25 580,80 450,135 320,80"/><text class="label" x="450" y="84" text-anchor="middle">N1: invalid?</text>
+<rect id="N2" class="node" x="90" y="155" width="180" height="50" rx="8"/><text class="label" x="180" y="186" text-anchor="middle">N2: return -1</text>
+<rect id="N3" class="node" x="630" y="155" width="180" height="50" rx="8"/><text class="label" x="720" y="186" text-anchor="middle">N3: fee = 4</text>
+<polygon id="N4" class="node" points="720,270 850,340 720,410 590,340"/><text class="label" x="720" y="345" text-anchor="middle">N4: distance &gt; 10?</text>
+<rect id="N5" class="node" x="270" y="430" width="180" height="50" rx="8"/><text class="label" x="360" y="461" text-anchor="middle">N5: fee += 2</text>
+<rect id="N6" class="node" x="270" y="550" width="180" height="50" rx="8"/><text class="label" x="360" y="581" text-anchor="middle">N6: distance -= 10</text>
+<polygon id="N7" class="node" points="820,420 900,470 820,520 740,470"/><text class="label" x="820" y="475" text-anchor="middle">N7: express?</text>
+<rect id="N8" class="node" x="530" y="555" width="180" height="50" rx="8"/><text class="label" x="620" y="586" text-anchor="middle">N8: fee += 5</text>
+<rect id="N9" class="node" x="770" y="625" width="180" height="50" rx="8"/><text class="label" x="860" y="656" text-anchor="middle">N9: return fee</text>
+<text class="branch" x="285" y="125">T</text><text class="branch" x="615" y="125">F</text>
+<text class="branch" x="520" y="410">T</text><text class="branch" x="815" y="405">F</text>
+<text class="branch" x="715" y="525">T</text><text class="branch" x="875" y="550">F</text>
+</svg></div></div>
 <script>
-const allNodes=["N1","N2","N3","N4","N5","N6","N7","N8","N9","N10","N11"];
-const allEdges=["N1-N2","N1-N3","N3-N4","N4-N5","N5-N6","N5-N8","N6-N7","N7-N5","N8-N9","N8-N10","N9-N11","N10-N11"];
-
-function execute(items,member){
-  const nodes=["N1"],edges=[];
-  if(items<0 || items>3){
-    nodes.push("N2");
-    edges.push("N1-N2");
-    return {result:-1,nodes,edges};
-  }
-
-  nodes.push("N3","N4","N5");
-  edges.push("N1-N3","N3-N4","N4-N5");
-
-  let fee=5;
-  let i=0;
-  while(i<items){
-    nodes.push("N6","N7","N5");
-    edges.push("N5-N6","N6-N7","N7-N5");
-    fee+=2;
-    i++;
-  }
-
-  nodes.push("N8");
-  edges.push("N5-N8");
-
-  if(member){
-    nodes.push("N9","N11");
-    edges.push("N8-N9","N9-N11");
-    fee-=3;
-  }else{
-    nodes.push("N10","N11");
-    edges.push("N8-N10","N10-N11");
-    fee+=1;
-  }
-
-  return {result:fee,nodes,edges};
+const initial=`5,false
+15,true`;
+const nodes=["N1","N2","N3","N4","N5","N6","N7","N8","N9"];
+const edges=["e12","e13","e34","e45","e47","e56","e64","e78","e79","e89"];
+function trace(distance,express){
+ let ns=["N1"],es=[];
+ if(distance<0||distance>30){es.push("e12");ns.push("N2");return{ns,es,result:-1};}
+ es.push("e13");ns.push("N3");let fee=4;es.push("e34");ns.push("N4");
+ while(distance>10){es.push("e45");ns.push("N5");fee+=2;es.push("e56");ns.push("N6");distance-=10;es.push("e64");ns.push("N4");}
+ es.push("e47");ns.push("N7");
+ if(express){es.push("e78");ns.push("N8");fee+=5;es.push("e89");ns.push("N9");}
+ else{es.push("e79");ns.push("N9");}
+ return{ns,es,result:fee};
 }
+function run(){
+ nodes.concat(edges).forEach(id=>document.getElementById(id).classList.remove("hit"));
+ const ns=new Set(),es=new Set(),lines=[];let bad=0;
+ tests.value.split(/
++/).map(x=>x.trim()).filter(Boolean).forEach((line,i)=>{
+  const p=line.split(",").map(x=>x.trim());
+  if(p.length!==2||!Number.isInteger(Number(p[0]))||!["true","false"].includes(p[1])){bad++;lines.push(`Row ${i+1}: FORMAT ERROR`);return;}
+  const r=trace(Number(p[0]),p[1]==="true");r.ns.forEach(x=>ns.add(x));r.es.forEach(x=>es.add(x));
+  lines.push(`${line} -> ${r.result}`);
+ });
+ ns.forEach(id=>document.getElementById(id).classList.add("hit"));es.forEach(id=>document.getElementById(id).classList.add("hit"));
+ summary.textContent=`Nodes: ${ns.size}/9
+Edges: ${es.size}/10
+Invalid rows: ${bad}
 
-function parseTests(){
-  return tests.value.split(/\n+/).map(x=>x.trim()).filter(Boolean).map((line,index)=>{
-    const parts=line.split(",").map(x=>x.trim());
-    if(parts.length!==2) return {row:index+1,error:"FORMAT ERROR"};
-    const items=Number(parts[0]);
-    const member=parts[1].toLowerCase();
-    if(!Number.isInteger(items)) return {row:index+1,error:"items must be an integer"};
-    if(!["true","false"].includes(member)) return {row:index+1,error:"member must be true or false"};
-    return {row:index+1,line,items,member:member==="true"};
-  });
+${lines.join("
+")}`;
 }
-
-function clearGraph(){
-  allNodes.forEach(id=>{const e=document.getElementById(id);if(e)e.classList.remove("covered")});
-  allEdges.forEach(id=>{
-    const e=document.getElementById("e"+id.replaceAll("N","").replace("-",""));
-    if(e)e.classList.remove("covered");
-  });
-}
-
-function runTests(){
-  clearGraph();
-  const rows=parseTests();
-  const nodes=new Set(),edges=new Set(),output=[];
-
-  for(const row of rows){
-    if(row.error){
-      output.push(`${row.row}. ${row.error}`);
-      continue;
-    }
-
-    const result=execute(row.items,row.member);
-    result.nodes.forEach(x=>nodes.add(x));
-    result.edges.forEach(x=>edges.add(x));
-    output.push(`${row.row}. ${row.line} -> result=${result.result}\n   path: ${result.nodes.join(" → ")}`);
-  }
-
-  nodes.forEach(id=>{const e=document.getElementById(id);if(e)e.classList.add("covered")});
-  edges.forEach(id=>{
-    const e=document.getElementById("e"+id.replaceAll("N","").replace("-",""));
-    if(e)e.classList.add("covered");
-  });
-
-  const missingNodes=allNodes.filter(x=>!nodes.has(x));
-  const missingEdges=allEdges.filter(x=>!edges.has(x));
-
-  summary.textContent=
-    output.join("\n")+
-    `\n\nNode coverage: ${nodes.size}/${allNodes.length}`+
-    `\nEdge coverage: ${edges.size}/${allEdges.length}`;
-
-  let html=`<p class="${missingNodes.length?'bad':'good'}">Missing nodes: ${missingNodes.length?missingNodes.join(", "):"none"}</p>`;
-  html+=`<p class="${missingEdges.length?'bad':'good'}">Missing edges: ${missingEdges.length?missingEdges.join(", "):"none"}</p>`;
-  details.innerHTML=html;
-}
-
-function toggleGraph(){
-  const g=document.getElementById("graphCard");
-  g.style.display=(g.style.display==="block")?"none":"block";
-}
-
-function clearTests(){
-  tests.value="";
-  summary.textContent="No tests executed.";
-  details.innerHTML="";
-  clearGraph();
-}
+function resetTests(){tests.value=initial;summary.textContent="No analysis performed.";nodes.concat(edges).forEach(id=>document.getElementById(id).classList.remove("hit"));}
 </script>
-</body>
-</html>
+</body></html>
