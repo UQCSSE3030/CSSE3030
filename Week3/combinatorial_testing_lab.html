@@ -3,184 +3,87 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Week 3 — Combinatorial Testing Lab</title>
+<title>Checkout Test Lab</title>
 <style>
-:root{--uq:#51247a;--bg:#f4f0f7;--line:#ddd6e6;--muted:#666;--good:#1e6b3c;--bad:#a63038}
-*{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#222}
-header{background:var(--uq);color:white;padding:22px 30px}
-header h1{margin:0;font-size:28px}
-header p{margin:7px 0 0}
-.wrap{max-width:1100px;margin:22px auto;padding:0 16px}
+:root{--uq:#51247a;--bg:#f4f0f7;--line:#ddd6e6;--good:#1e6b3c;--bad:#a63038}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#222}
+header{background:var(--uq);color:white;padding:22px 30px}header h1{margin:0}
+.wrap{max-width:1050px;margin:22px auto;padding:0 16px}
 .card{background:white;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 2px 10px #00000010}
-h2,h3{margin-top:0;color:var(--uq)}
-.code{font-family:Consolas,monospace;background:#f6f4fa;border-left:4px solid var(--uq);padding:14px;white-space:pre-wrap}
-textarea{width:100%;min-height:180px;padding:10px;border:1px solid #bbb;border-radius:7px;font-family:Consolas,monospace}
-button{background:var(--uq);color:white;border:0;border-radius:7px;padding:10px 15px;font-weight:700;cursor:pointer;margin:0 8px 8px 0}
+h2{margin-top:0;color:var(--uq)}textarea{width:100%;min-height:220px;padding:10px;border:1px solid #bbb;border-radius:7px;font-family:Consolas,monospace}
+button{background:var(--uq);color:white;border:0;border-radius:7px;padding:10px 15px;font-weight:700;cursor:pointer;margin-right:8px}
 .result{margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:8px;background:#fafafa;font-family:Consolas,monospace;white-space:pre-wrap}
-.small{font-size:13px;color:var(--muted)}.good{color:var(--good);font-weight:700}.bad{color:var(--bad);font-weight:700}
-table{border-collapse:collapse;width:100%;font-size:13px;margin-top:12px}
-th,td{border:1px solid #ddd;padding:7px;text-align:left}
-th{background:#f3edf7;color:var(--uq)}
-code{background:#f6f4fa;padding:2px 4px;border-radius:4px}
+.good{color:var(--good);font-weight:700}.bad{color:var(--bad);font-weight:700}
+table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:7px;text-align:left}th{background:#f3edf7;color:var(--uq)}
 </style>
 </head>
 <body>
-<header>
-<h1>Case 1 — Combinatorial Testing</h1>
-<p>Design and evaluate a constrained pairwise test suite.</p>
-</header>
-
+<header><h1>Checkout Test Lab</h1><p>Check and improve the release test suite.</p></header>
 <div class="wrap">
-
 <div class="card">
-<h2>System model</h2>
+<h2>The Model</h2>
 <table>
 <tr><th>Parameter</th><th>Values</th></tr>
-<tr><td>Platform</td><td>Zoom, Teams, Meet</td></tr>
-<tr><td>Device</td><td>Desktop, Tablet, Phone</td></tr>
-<tr><td>Network</td><td>WiFi, Mobile</td></tr>
-<tr><td>Authentication</td><td>Password, SSO</td></tr>
-<tr><td>Recording</td><td>Enabled, Disabled</td></tr>
+<tr><td>Browser</td><td>Chrome, Firefox, Safari</td></tr><tr><td>Device</td><td>Desktop, Tablet, Phone</td></tr><tr><td>Payment</td><td>Card, PayPal</td></tr><tr><td>Account</td><td>Guest, Member</td></tr><tr><td>Delivery</td><td>Standard, Express</td></tr>
 </table>
-
-<h3>Constraints</h3>
-<ol>
-<li>Phone cannot use SSO.</li>
-<li>Mobile cannot use Recording = Enabled.</li>
-<li>Meet on Tablet cannot use Recording = Enabled.</li>
-</ol>
-
-<p class="small">A pair is feasible only if it appears in at least one complete valid configuration.</p>
+<p><strong>Rules</strong></p>
+<p>Guest cannot use Express.<br>Tablet cannot use PayPal.<br>Safari on Phone cannot use PayPal.</p>
 </div>
-
 <div class="card">
-<h2>Test</h2>
-<p class="small">One test per line. CSV order: Platform,Device,Network,Authentication,Recording</p>
-<div class="result"><strong>Example of one correctly formatted test:</strong><br>Zoom,Desktop,WiFi,Password,Enabled</div>
-<p class="small">Do not include headings, brackets, quotation marks, or test numbers. Enter your own suite below.</p>
-<textarea id="suite" placeholder="Example format: Zoom,Desktop,WiFi,Password,Enabled"></textarea>
-
-<p>
-<button onclick="analyse()">Check pairwise coverage</button>
-<button onclick="clearSuite()">Clear</button>
-</p>
-
+<h2>Current Tests</h2>
+<p>One test per line.</p>
+<div class="result">Example format:<br>Chrome,Desktop,Card,Member,Standard</div>
+<textarea id="suite">Chrome,Phone,PayPal,Member,Express
+Firefox,Phone,PayPal,Guest,Standard
+Safari,Desktop,PayPal,Guest,Standard
+Chrome,Tablet,Card,Guest,Standard
+Firefox,Desktop,Card,Member,Express
+Safari,Tablet,Card,Member,Express</textarea>
+<p><button onclick="analyse()">Check coverage</button><button onclick="resetSuite()">Reset</button></p>
 <div id="summary" class="result">No analysis performed.</div>
-<div id="details"></div>
 </div>
 </div>
-
 <script>
-const model={
-  Platform:["Zoom","Teams","Meet"],
-  Device:["Desktop","Tablet","Phone"],
-  Network:["WiFi","Mobile"],
-  Authentication:["Password","SSO"],
-  Recording:["Enabled","Disabled"]
-};
+const model={"Browser": ["Chrome", "Firefox", "Safari"], "Device": ["Desktop", "Tablet", "Phone"], "Payment": ["Card", "PayPal"], "Account": ["Guest", "Member"], "Delivery": ["Standard", "Express"]};
 const names=Object.keys(model);
-
+const initial="Chrome,Phone,PayPal,Member,Express\nFirefox,Phone,PayPal,Guest,Standard\nSafari,Desktop,PayPal,Guest,Standard\nChrome,Tablet,Card,Guest,Standard\nFirefox,Desktop,Card,Member,Express\nSafari,Tablet,Card,Member,Express";
 function valid(t){
-  if(t.Device==="Phone" && t.Authentication==="SSO") return false;
-  if(t.Network==="Mobile" && t.Recording==="Enabled") return false;
-  if(t.Platform==="Meet" && t.Device==="Tablet" && t.Recording==="Enabled") return false;
-  return true;
+ if(t.Account==="Guest"&&t.Delivery==="Express")return false;
+ if(t.Device==="Tablet"&&t.Payment==="PayPal")return false;
+ if(t.Browser==="Safari"&&t.Device==="Phone"&&t.Payment==="PayPal")return false;
+ return true;
 }
-
-function enumerateValidTests(){
-  let rows=[{}];
-  for(const name of names){
-    const next=[];
-    for(const row of rows){
-      for(const value of model[name]) next.push({...row,[name]:value});
-    }
-    rows=next;
-  }
-  return rows.filter(valid);
+function enumerate(){
+ let rows=[{}];
+ for(const n of names){
+   const next=[];
+   for(const r of rows)for(const v of model[n])next.push({...r,[n]:v});
+   rows=next;
+ }
+ return rows.filter(valid);
 }
-const validTests=enumerateValidTests();
-
-function pairKey(i,a,j,b){
-  return `${names[i]}=${a} | ${names[j]}=${b}`;
+const validTests=enumerate();
+function key(i,a,j,b){return `${names[i]}=${a} | ${names[j]}=${b}`;}
+const required=new Set();
+for(const t of validTests)for(let i=0;i<names.length;i++)for(let j=i+1;j<names.length;j++)required.add(key(i,t[names[i]],j,t[names[j]]));
+function parse(){
+ return suite.value.split(/\n+/).map(x=>x.trim()).filter(Boolean).map((line,row)=>{
+   const parts=line.split(",").map(x=>x.trim());
+   if(parts.length!==names.length)return{row:row+1,error:"FORMAT ERROR"};
+   const t={};names.forEach((n,i)=>t[n]=parts[i]);
+   for(const n of names)if(!model[n].includes(t[n]))return{row:row+1,error:`invalid ${n}: ${t[n]}`};
+   if(!valid(t))return{row:row+1,error:"constraint violation"};
+   return{row:row+1,test:t};
+ });
 }
-
-function feasiblePairs(){
-  const set=new Set();
-  for(const test of validTests){
-    for(let i=0;i<names.length;i++){
-      for(let j=i+1;j<names.length;j++){
-        set.add(pairKey(i,test[names[i]],j,test[names[j]]));
-      }
-    }
-  }
-  return set;
-}
-const requiredPairs=feasiblePairs();
-
-function parseSuite(){
-  return suite.value.split(/\n+/).map(x=>x.trim()).filter(Boolean).map((line,index)=>{
-    const parts=line.split(",").map(x=>x.trim());
-    if(parts.length!==names.length) return {row:index+1,error:"FORMAT ERROR"};
-    const test={};
-    names.forEach((name,i)=>test[name]=parts[i]);
-
-    for(const name of names){
-      if(!model[name].includes(test[name])){
-        return {row:index+1,error:`invalid ${name}: ${test[name]}`};
-      }
-    }
-
-    if(!valid(test)) return {row:index+1,error:"constraint violation"};
-    return {row:index+1,test};
-  });
-}
-
-function coveredPairs(rows){
-  const set=new Set();
-  for(const row of rows){
-    if(!row.test) continue;
-    const test=row.test;
-    for(let i=0;i<names.length;i++){
-      for(let j=i+1;j<names.length;j++){
-        set.add(pairKey(i,test[names[i]],j,test[names[j]]));
-      }
-    }
-  }
-  return set;
-}
-
 function analyse(){
-  const rows=parseSuite();
-  const invalid=rows.filter(r=>r.error);
-  const covered=coveredPairs(rows);
-  const missing=[...requiredPairs].filter(p=>!covered.has(p));
-  const percentage=(100*covered.size/requiredPairs.size).toFixed(1);
-
-  summary.textContent=
-    `Valid tests: ${rows.length-invalid.length}\n`+
-    `Invalid rows: ${invalid.length}\n`+
-    `Feasible pairs covered: ${covered.size}/${requiredPairs.size} (${percentage}%)\n`+
-    `Missing feasible pairs: ${missing.length}`;
-
-  let html="";
-  if(invalid.length){
-    html+=`<h3 class="bad">Invalid rows</h3><table><tr><th>Row</th><th>Issue</th></tr>`;
-    html+=invalid.map(r=>`<tr><td>${r.row}</td><td>${r.error}</td></tr>`).join("");
-    html+=`</table>`;
-  }
-
-  if(!missing.length){
-    html+=`<p class="good">All feasible pairs are covered.</p>`;
-  }
-  details.innerHTML=html;
+ const rows=parse();const invalid=rows.filter(r=>r.error);const covered=new Set();
+ for(const r of rows)if(r.test)for(let i=0;i<names.length;i++)for(let j=i+1;j<names.length;j++)covered.add(key(i,r.test[names[i]],j,r.test[names[j]]));
+ const missing=[...required].filter(x=>!covered.has(x));
+ summary.textContent=`Valid tests: ${rows.length-invalid.length}\nInvalid rows: ${invalid.length}\nRequired pairs covered: ${covered.size}/${required.size}\nMissing pairs: ${missing.length}`;
+ summary.className="result "+(missing.length||invalid.length?"bad":"good");
 }
-
-function clearSuite(){
-  suite.value="";
-  summary.textContent="No analysis performed.";
-  details.innerHTML="";
-}
+function resetSuite(){suite.value=initial;summary.textContent="No analysis performed.";summary.className="result";}
 </script>
 </body>
 </html>
